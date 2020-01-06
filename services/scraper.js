@@ -3,11 +3,13 @@ const cheerio = require("cheerio");
 var Promise = require("bluebird");
 const Restaurant = require('../models/restaurant_data');
 const City = require('../models/cities');
+let emalSender = require('./emailNotification');
 
 var localCity = '';
 // this function generates the urls that should be visited to extract restaurant urls for info gathering
-const generateUrls = (url, totalNumberOfPages) => {
+const generateUrls = async (url, totalNumberOfPages) => {
   var urls = []
+  console.log('url here ===>', url)
   var oaIndex = url.indexOf("-oa");
   var subUrl1 = url.slice(0, oaIndex);
   var subUrl2 = url.slice(oaIndex + 3, url.length)
@@ -94,7 +96,7 @@ const jobProcessor = async (url, totalNumberOfPages, city) =>{
         name : localCity
     })
     cityObj.save((err, data) => {
-        console.error(errors)
+        console.error('errori te save i cityt',err)
     });
 
     let totalUrls = await generateUrls(url, totalNumberOfPages);
@@ -104,9 +106,11 @@ const jobProcessor = async (url, totalNumberOfPages, city) =>{
     await Promise.map(restaurantsUrl, getDataFromPage, {concurrency: 10})
     .then(result => {
         Restaurant.insertMany(result)
+        console.log('Done!');
     }).catch( error =>{
         console.error(error)
     })
+    emalSender(localCity);
 }
 
 module.exports = jobProcessor

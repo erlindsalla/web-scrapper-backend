@@ -12,23 +12,22 @@ router.get('/', function(req, res, next) {
 
 router.post('/fetchRestaurantData' , async (req, res) => {
   var _url = req.body.url;
-  var cityName = req.body.fileName;
-  var pageNumber = req.body.pageNumber;
-  
+  var cityName = req.body.cityName;
+  var totalNumberOfPages = req.body.pageNumber;
     try {
      const url = await Url.find({
        name: _url
      })
       if(url.length == 0) {
         const newUrl = new Url({name : _url})
-
         await newUrl.save()
-          jobProcessor(_url, pageNumber, cityName)
-          .catch(error => {
-            console.error(error)
-          });
 
-          return res.redirect('/allRestaurants');
+        jobProcessor(_url, totalNumberOfPages, cityName)
+        .catch(error => {
+          console.error(error)
+        });
+
+        return res.send('ok');
       } else {
         return  res.status(200).send('You can not scrape for the same city twice!')
         }
@@ -38,36 +37,40 @@ router.post('/fetchRestaurantData' , async (req, res) => {
 });
 
 router.get('/allRestaurants', async (req, res, next) => {
-  var test = 'null';
-  await Cities.find()
-    .exec()
-    .then(cities => {
-      test = cities;
-      res.render('allRestaurants', { allCities: cities });
-    })
-    .catch(err => console.log(err));
-    //res.json(test)
+  try {
+    const cities = await Cities.find().exec()
+    return res.json(cities);
+  } catch(e) {
+      res.status(400).json({error:e})
+  }
 });
 
 //get all restaurants data for the specified city with or without filters
 router.post('/allRestaurants', async (req, res) => {
-  await RestaurantData.find(
+  const {city , currentPage} = req.body
+  try {
+    const resDataLength = await RestaurantData.find(
       {
-        city: req.body.city, 
+        city: city, 
         phone: { $ne: req.body.phone }, 
         email: { $ne: req.body.email } 
       })
-    .exec()
-    .then(resData => {  
-      console.log({
-        city: req.body.city, 
-        phone: { $ne: req.body.phone }, 
-        email: { $ne: req.body.email }
-      })
-      return res.status(200).json(resData);
-     
-    })
-    .catch( err => console.log(err));
+      .exec()
+      console.log('req ===>', req.body.phone, req.body.email);
+      const resData = await RestaurantData.find(
+        {
+          city: city, 
+          phone: { $ne: req.body.phone }, 
+          email: { $ne: req.body.email } 
+        })
+        .limit(100)
+        .skip(currentPage * 100)
+      .exec()
+      console.log(resData.length)
+      return res.json({resData,'resDataLength': resDataLength.length})
+    } catch (e) {
+      res.status(400).json({error:e})
+    }
 })
 
 module.exports = router;
