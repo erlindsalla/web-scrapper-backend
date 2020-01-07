@@ -13,7 +13,7 @@ const emailSender = async (cityName) => {
         from: 'webscrapper1@gmail.com', // Sender address
         to: 'ilirteshoo@gmail.com',         // List of recipients
         subject: 'Data Scrapping finished!!!', // Subject line
-        text: 'The' + `${cityName}`+ 'finished scrapping!' // Plain text body
+        text: 'The ' + `${cityName}`+ ' finished scrapping!' // Plain text body
     };
     
     transport.sendMail(message, function(err, info) {

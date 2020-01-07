@@ -27,13 +27,13 @@ router.post('/fetchRestaurantData' , async (req, res) => {
           console.error(error)
         });
 
-        return res.send('ok');
+        return res.status(200).send('ok');
       } else {
         return  res.status(200).send('You can not scrape for the same city twice!')
         }
       } catch (e) {
          res.status(400).send(e)
-        }
+      }
 });
 
 router.get('/allRestaurants', async (req, res, next) => {
